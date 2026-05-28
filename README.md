@@ -126,5 +126,5 @@ to construct the cleaned covariance matrix:
 
 ## 🙋 Author
 
-Your Name
-github.com/YOUR_USERNAME
+Godwin Yuen
+github.com/gy623
