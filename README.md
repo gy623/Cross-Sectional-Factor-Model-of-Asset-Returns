@@ -1,219 +1,137 @@
 # Cross-Sectional Factor Model of Asset Returns
 
-A beginner-to-intermediate project implementing cross-sectional factor models using both fundamental factor regressions and PCA-based statistical factor extraction.
-
-Built in Python using Jupyter notebooks.
+A beginner-to-intermediate project implementing a cross-sectional factor model with PCA-based statistical factor extraction, built in Python using Jupyter notebooks.
 
 ---
 
-## 🧠 Project Overview
+## 🧠 What This Project Does
 
-This repository explores different approaches to modelling the cross-section of stock returns.
+This project builds a cross-sectional factor model that explains variation in asset returns across stocks at each point in time.
 
-The project originally began as a single implementation combining:
+The pipeline covers:
 
-* Fundamental factor modelling via Weighted Least Squares (WLS)
-* Statistical factor extraction via Principal Component Analysis (PCA)
+* Constructing a clean asset return panel
+* Building and normalising fundamental factor signals
+* Running period-by-period WLS cross-sectional regressions
+* Applying PCA to extract statistical factors and clean the covariance matrix
+* Validating the model using IC, ICIR, and residual diagnostics
 
-During development, it became apparent that the two methodologies require different return preprocessing assumptions and therefore do not reconcile naturally within a single framework.
+The core model is:
 
-In particular:
-
-* The **WLS factor model** is implemented using raw returns.
-* The **PCA factor model** uses cross-sectionally normalised (standardised) returns prior to factor extraction.
-
-To reflect this distinction, the repository was split into three separate implementations.
+$r_{i,t} = \sum_k \beta_{i,k} \cdot f_{k,t} + \epsilon_{i,t}$
 
 ---
 
-## 📁 Repository Structure
+## 📁 Repo Structure
 
-```text
 cross-sectional-factor-model/
 │
-├── factor_model_1/
-│   ├── factor_model_1.ipynb
-│   ├── data/
-│   └── outputs/
+├── factor_model_1.ipynb          ← Original exploration notebook (WLS + PCA combined attempt)
+├── factor_model_WLS.ipynb        ← Dedicated WLS cross-sectional regression implementation
+├── factor_model_PCA.ipynb        ← Dedicated PCA-based statistical factor model
 │
-├── factor_model_WLS/
-│   ├── factor_model_WLS.ipynb
-│   ├── data/
-│   └── outputs/
+├── data/
+│   ├── raw/                      ← Raw price and fundamental data
+│   └── processed/               ← Cleaned return panel and factor signals
 │
-├── factor_model_PCA/
-│   ├── factor_model_PCA.ipynb
-│   ├── data/
-│   └── outputs/
+├── outputs/
+│   ├── figures/                 ← Saved plots
+│   └── results/                ← Factor returns, loadings, diagnostics (CSV)
 │
-└── README.md
-```
+├── requirements.txt             ← Python dependencies
+├── .gitignore                   ← Git exclusions
+└── README.md                    ← Project documentation
 
----
-
-## 📂 Project Descriptions
-
-### factor_model_1
-
-The original exploratory implementation.
-
-This notebook contains both the WLS and PCA approaches and documents the development process that led to their separation.
-
-A key finding was that the two methods require different return preprocessing assumptions:
-
-* WLS performs best using raw returns.
-* PCA requires cross-sectional standardisation of returns to extract meaningful latent factors.
-
-As a result, the approaches were separated into dedicated notebooks.
-
----
-
-### factor_model_WLS
-
-A Barra-style cross-sectional factor model estimated using weighted least squares.
-
-Features include:
-
-* Value factor
-* Momentum factor
-* Size factor
-* Quality factor
-* Period-by-period cross-sectional regressions
-* Market-cap-based weighting
-* Factor return estimation
-* Residual diagnostics
-
-Returns are **not cross-sectionally normalised** before regression.
-
-The model takes the form:
-
-[
-r_{i,t} = \sum_k \beta_{i,k} f_{k,t} + \epsilon_{i,t}
-]
-
-where:
-
-* (r_{i,t}) is the return of asset (i)
-* (\beta_{i,k}) is the exposure of asset (i) to factor (k)
-* (f_{k,t}) is the factor return
-* (\epsilon_{i,t}) is the idiosyncratic residual
-
----
-
-### factor_model_PCA
-
-A statistical factor model based on Principal Component Analysis.
-
-Features include:
-
-* Cross-sectional return standardisation
-* PCA factor extraction
-* Scree plot analysis
-* Marchenko–Pastur factor selection
-* Covariance matrix cleaning
-* Residual structure diagnostics
-
-The cleaned covariance matrix is constructed as:
-
-[
-\Sigma_r = B\Sigma_fB^\top + \Delta
-]
-
-where:
-
-* (B) is the factor loading matrix
-* (\Sigma_f) is the factor covariance matrix
-* (\Delta) is the diagonal specific-risk matrix
-
----
-
-## ⚙️ Setup Instructions
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-cd YOUR_REPO_NAME
-```
-
-### 2. Create a Virtual Environment (Recommended)
-
-```bash
-python -m venv venv
-
-# Mac/Linux
-source venv/bin/activate
-
-# Windows
-venv\Scripts\activate
-```
-
-### 3. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Launch Jupyter
-
-```bash
-jupyter notebook
-```
-
-Open the notebook corresponding to the implementation you wish to run.
+All notebooks share the same `data/` and `outputs/` directories to ensure consistent preprocessing, feature engineering, and evaluation across methods.
 
 ---
 
 ## 📦 Data
 
-Price data is retrieved automatically using `yfinance`.
+Price data is pulled automatically via `yfinance` inside the notebooks, so no manual downloads are required.
 
-No manual downloads are required.
-
-Each model directory contains its own:
-
-* `data/` folder for raw and processed datasets
-* `outputs/` folder for figures, diagnostics, and exported results
-
-To use custom data, place CSV files in the appropriate `data/` directory and modify the loading section of the notebook accordingly.
+If you want to use your own dataset, place CSV files in `data/raw/` and update the relevant loading cell in each notebook.
 
 ---
 
-## 📊 Validation
+## 📐 Methodology Notes
 
-The notebooks include a range of validation techniques, including:
+### 1. Cross-Sectional WLS Model
 
-* Information Coefficient (IC)
-* Information Coefficient Information Ratio (ICIR)
-* Factor return analysis
-* Residual diagnostics
-* Residual PCA
-* Covariance reconstruction checks
+The WLS implementation estimates factor exposures via period-by-period weighted least squares regression across assets.
+
+Weights are proportional to $\sqrt{\text{market cap}}$, reducing the influence of micro-cap noise.
+
+A key design decision in this project is that the WLS pipeline operates on **raw (non-log, non-cross-sectionally normalised) returns**, since empirical testing showed that additional cross-sectional normalisation reduced stability and weakened factor interpretability in this specification.
 
 ---
 
-## 🗺️ Future Extensions
+### 2. PCA Statistical Factor Model
+
+The PCA pipeline operates on a **standardised cross-sectional return panel**, where returns are normalised at each time step before decomposition.
+
+PCA is applied to extract orthogonal statistical factors from the covariance structure of returns.
+
+The number of factors $K$ is selected using:
+
+* Scree plot inspection
+* Marchenko–Pastur upper bound from random matrix theory
+
+The resulting decomposition is:
+
+$\Sigma_r = B \Sigma_f B^\top + \Delta$
+
+where:
+
+* $B$ is the loading matrix
+* $\Sigma_f$ is the factor covariance matrix
+* $\Delta$ is idiosyncratic noise
+
+---
+
+### 3. Model Validation
+
+Performance is evaluated using:
+
+* Information Coefficient (IC): Spearman rank correlation between predicted and realised returns
+* ICIR: $\text{ICIR} = \frac{\mathbb{E}[\text{IC}]}{\text{Std}(\text{IC})}$, analogous to a Sharpe ratio for signal quality
+* Residual PCA: checks for remaining latent structure not captured by the model
+
+---
+
+## 🧪 Key Design Insight
+
+A central observation in this project is that:
+
+* WLS factor estimation is more stable on raw return space
+* PCA factor extraction benefits from cross-sectional normalisation
+
+As a result, the two pipelines are intentionally separated rather than forced into a single unified preprocessing framework.
+
+This separation improves interpretability and avoids conflicting statistical assumptions.
+
+---
+
+## 🗺️ Roadmap / Extensions
 
 * [ ] Add Fama–MacBeth standard errors
 * [ ] Incorporate sector neutralisation
-* [ ] Implement covariance shrinkage methods
 * [ ] Add DCC-GARCH dynamic covariance modelling
-* [ ] Build a long/short factor backtest
-* [ ] Refactor reusable functions into a `src/` package
+* [ ] Build a long/short backtest layer
+* [ ] Refactor reusable components into a `/src` module
 
 ---
 
 ## 📚 References
 
 * Barra USE4 Factor Model Documentation
-* Fama & MacBeth (1973) — *Risk, Return and Equilibrium*
-* Ledoit & Wolf (2004) — *Honey, I Shrunk the Sample Covariance Matrix*
-* Marchenko & Pastur (1967) — *Random Matrix Theory*
+* Fama & MacBeth (1973) — Risk, Return, and Equilibrium
+* Ledoit & Wolf (2004) — Shrinkage Estimators for Covariance Matrices
+* Marchenko & Pastur (1967) — Random Matrix Theory
 
 ---
 
 ## 🙋 Author
 
-**Godwin Yuen**
-
-GitHub: https://github.com/gy623
+Godwin Yuen
+github.com/gy623
