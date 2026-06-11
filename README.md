@@ -24,7 +24,7 @@ $r_{i,t} = \sum_k \beta_{i,k} \cdot f_{k,t} + \epsilon_{i,t}$
 
 ## 📁 Repo Structure
 
-'''text
+```text
 
 cross-sectional-factor-model/
 │
@@ -43,7 +43,8 @@ cross-sectional-factor-model/
 ├── requirements.txt             ← Python dependencies
 ├── .gitignore                   ← Git exclusions
 └── README.md                    ← Project documentation
-'''
+```
+
 All notebooks share the same `data/` and `outputs/` directories to ensure consistent preprocessing, feature engineering, and evaluation across methods.
 
 ---
