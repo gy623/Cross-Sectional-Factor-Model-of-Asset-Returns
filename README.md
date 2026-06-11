@@ -75,10 +75,7 @@ The PCA pipeline operates on a **standardised cross-sectional return panel**, wh
 
 PCA is applied to extract orthogonal statistical factors from the covariance structure of returns.
 
-The number of factors $K$ is selected using:
-
-* Scree plot inspection
-* Marchenko–Pastur upper bound from random matrix theory
+The number of factors $K$ is selected using Scree plot inspection
 
 The resulting decomposition is:
 
