@@ -35,35 +35,12 @@ cross-sectional-factor-model/
 ├── factor_model_pca_risk.ipynb
 ├── factor_model_old.ipynb
 ├── portfolio_evaluation.ipynb
-│
 ├── data/
-│   ├── raw/
-│   └── processed/
-│
 ├── outputs/
-│   ├── figures/
-│   └── results/
-│
-├── requirements.txt
-├── .gitignore
 └── README.md
 ```
 
 All notebooks share a unified `data/` and `outputs/` structure for consistent preprocessing and evaluation.
-
----
-
-## 📦 Data
-
-Price data is sourced automatically via `yfinance` within notebooks.
-
-To use custom datasets, place CSV files in:
-
-```
-data/raw/
-```
-
-and update the loading cells accordingly.
 
 ---
 
@@ -81,9 +58,8 @@ This module builds **5 interpretable economic factors**:
 
 ### Pipeline
 
-* Cross-sectional winsorisation
-* Cross-sectional standardisation (z-score at each time $t$)
-* Sequential orthogonalisation (residualisation order)
+* Cross-sectional winsorisation and standardisation (z-score at each time $t$)
+* Sequential orthogonalisation (residualisation)
 * Rolling Information Coefficient (IC)
 
 ### Signal construction
