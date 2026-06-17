@@ -1,137 +1,229 @@
 # Cross-Sectional Factor Model of Asset Returns
 
-A beginner-to-intermediate project implementing a cross-sectional factor model with PCA-based statistical factor extraction, built in Python using Jupyter notebooks.
+A beginner-to-intermediate project implementing cross-sectional and statistical factor models for asset returns, combining economic intuition (fundamental factors) with PCA-based risk modelling.
+
+Built in Python using Jupyter notebooks.
 
 ---
 
 ## 🧠 What This Project Does
 
-This project builds a cross-sectional factor model that explains variation in asset returns across stocks at each point in time.
+This project builds and compares multiple factor modelling frameworks to explain and forecast cross-sectional variation in asset returns.
 
-The pipeline covers:
+The pipeline includes:
 
-* Constructing a clean asset return panel
-* Building and normalising fundamental factor signals
-* Running period-by-period WLS cross-sectional regressions
-* Applying PCA to extract statistical factors and clean the covariance matrix
-* Validating the model using IC, ICIR, and residual diagnostics
+* Construction of a clean asset return panel
+* Implementation of a dynamic cross-sectional factor model
+* PCA-based statistical covariance (risk) modelling
+* Risk-adjusted portfolio construction
+* Backtesting and benchmark evaluation
 
-The core model is:
+Core modelling structure:
 
-$r_{i,t} = \sum_k \beta_{i,k} \cdot f_{k,t} + \epsilon_{i,t}$
+$$
+r_{i,t} = \sum_k \beta_{i,k,t} f_{k,t} + \epsilon_{i,t}
+$$
 
 ---
 
 ## 📁 Repo Structure
 
 ```text
-
 cross-sectional-factor-model/
 │
-├── factor_model_1.ipynb          ← Original exploration notebook (WLS + PCA combined attempt)
-├── factor_model_WLS.ipynb        ← Dedicated WLS cross-sectional regression implementation
-├── factor_model_PCA.ipynb        ← Dedicated PCA-based statistical factor model
+├── factor_model_dynamic.ipynb
+├── factor_model_pca_risk.ipynb
+├── factor_model_old.ipynb
+├── portfolio_evaluation.ipynb
 │
 ├── data/
-│   ├── raw/                      ← Raw price and fundamental data
-│   └── processed/               ← Cleaned return panel and factor signals
+│   ├── raw/
+│   └── processed/
 │
 ├── outputs/
-│   ├── figures/                 ← Saved plots
-│   └── results/                ← Factor returns, loadings, diagnostics (CSV)
+│   ├── figures/
+│   └── results/
 │
-├── requirements.txt             ← Python dependencies
-├── .gitignore                   ← Git exclusions
-└── README.md                    ← Project documentation
+├── requirements.txt
+├── .gitignore
+└── README.md
 ```
 
-All notebooks share the same `data/` and `outputs/` directories to ensure consistent preprocessing, feature engineering, and evaluation across methods.
+All notebooks share a unified `data/` and `outputs/` structure for consistent preprocessing and evaluation.
 
 ---
 
 ## 📦 Data
 
-Price data is pulled automatically via `yfinance` inside the notebooks, so no manual downloads are required.
+Price data is sourced automatically via `yfinance` within notebooks.
 
-If you want to use your own dataset, place CSV files in `data/raw/` and update the relevant loading cell in each notebook.
+To use custom datasets, place CSV files in:
 
----
+```
+data/raw/
+```
 
-## 📐 Methodology Notes
-
-### 1. Cross-Sectional WLS Model
-
-The WLS implementation estimates factor exposures via period-by-period weighted least squares regression across assets.
-
-Weights are proportional to $\sqrt{\text{market cap}}$, reducing the influence of micro-cap noise.
-
-A key design decision in this project is that the WLS pipeline operates on **raw (non-log, non-cross-sectionally normalised) returns**, since empirical testing showed that additional cross-sectional normalisation reduced stability and weakened factor interpretability in this specification.
+and update the loading cells accordingly.
 
 ---
 
-### 2. PCA Statistical Factor Model
+# 🧠 Methodology
 
-The PCA pipeline operates on a **standardised cross-sectional return panel**, where returns are normalised at each time step before decomposition.
+## 1. Dynamic Cross-Sectional Factor Model
 
-PCA is applied to extract orthogonal statistical factors from the covariance structure of returns.
+This module builds **5 interpretable economic factors**:
 
-The number of factors $K$ is selected using Scree plot inspection
+* Market beta
+* Momentum
+* Size (log market cap)
+* Low volatility
+* Long-term reversal
 
-The resulting decomposition is:
+### Pipeline
 
-$\Sigma_r = B \Sigma_f B^\top + \Delta$
+* Cross-sectional winsorisation
+* Cross-sectional standardisation (z-score at each time $t$)
+* Sequential orthogonalisation (residualisation order)
+* Rolling Information Coefficient (IC)
+
+### Signal construction
+
+* IC is used to generate time-varying factor weights
+* Factor forecasts are dynamically combined using IC-weighting
+
+---
+
+## 2. PCA Risk Engine
+
+This module builds a statistical covariance estimator + portfolio optimiser.
+
+### 2.1 PCA covariance estimation
+
+* Rolling window: **36 periods**
+* PCA decomposition of returns
+* Number of factors $k$ chosen such that:
+
+$$
+\sum_{i=1}^{k} \text{explained variance}_i \geq 0.80
+$$
+
+---
+
+### Covariance reconstruction
+
+$$
+\Sigma_{\text{PCA}} = B^\top F B
+$$
 
 where:
 
-* $B$ is the loading matrix
-* $\Sigma_f$ is the factor covariance matrix
-* $\Delta$ is idiosyncratic noise
+* $B$: eigenvector (loading) matrix
+* $F$: diagonal matrix of eigenvalues
 
 ---
 
-### 3. Model Validation
+### 2.2 Idiosyncratic risk
 
-Performance is evaluated using:
+$$
+D = \Sigma_{\text{sample}} - \Sigma_{\text{PCA}}
+$$
 
-* Information Coefficient (IC): Spearman rank correlation between predicted and realised returns
-* ICIR: $\text{ICIR} = \frac{\mathbb{E}[\text{IC}]}{\text{Std}(\text{IC})}$, analogous to a Sharpe ratio for signal quality
-* Residual PCA: checks for remaining latent structure not captured by the model
-
----
-
-## 🧪 Key Design Insight
-
-A central observation in this project is that:
-
-* WLS factor estimation is more stable on raw return space
-* PCA factor extraction benefits from cross-sectional normalisation
-
-As a result, the two pipelines are intentionally separated rather than forced into a single unified preprocessing framework.
-
-This separation improves interpretability and avoids conflicting statistical assumptions.
+Diagonal noise approximation is used for stability.
 
 ---
 
-## 🗺️ Roadmap / Extensions
+### 2.3 Risk-adjusted portfolio construction
 
-* [ ] Add Fama–MacBeth standard errors
-* [ ] Incorporate sector neutralisation
-* [ ] Add DCC-GARCH dynamic covariance modelling
-* [ ] Build a long/short backtest layer
-* [ ] Refactor reusable components into a `/src` module
+Let $s_t$ be factor model scores.
+
+#### Step 1: normalise signals
+
+* Cross-sectional normalisation:
+
+  * $\sum s_t = 1$
+
+#### Step 2: risk adjustment
+
+$$
+w_t = D^{-1} s_t
+$$
+
+#### Step 3: portfolio normalisation
+
+* Enforce:
+
+  * $\sum |w_t| = 1$
+  * $\sum w_t = 0$
+
+---
+
+### 2.4 Mean-variance optimisation (planned)
+
+To be implemented using CVXPY:
+
+* maximise return / risk trade-off
+* incorporate constraints from PCA risk model
+
+---
+
+## 3. Legacy Model (`factor_model_old`)
+
+Original exploratory implementation combining:
+
+* WLS cross-sectional regression
+* PCA factor extraction attempt
+* Early signal testing framework
+
+Kept for comparison and reference.
+
+---
+
+## 4. Portfolio Evaluation
+
+This notebook evaluates all strategies:
+
+* Portfolio PnL construction
+* Benchmark comparison
+* Risk and return metrics
+* IC / ICIR analysis
+* Drawdown and stability diagnostics
+
+---
+
+## 📐 Key Design Insights
+
+* Dynamic factor model improves interpretability via economically motivated signals
+* PCA risk model improves covariance stability in high-dimensional settings
+* Separation of:
+
+  * alpha model (signal generation)
+  * risk model (PCA covariance)
+    improves robustness and avoids conflicting assumptions
+
+---
+
+## 🗺️ Roadmap
+
+* [ ] Mean-variance optimisation (CVXPY implementation)
+* [ ] Sector neutrality constraints
+* [ ] Transaction cost modelling
+* [ ] DCC-GARCH dynamic covariance extension
+* [ ] Modular `/src` refactor for productionisation
+* [ ] Live portfolio simulation engine
 
 ---
 
 ## 📚 References
 
-* Barra USE4 Factor Model Documentation
-* Fama & MacBeth (1973) — Risk, Return, and Equilibrium
-* Ledoit & Wolf (2004) — Shrinkage Estimators for Covariance Matrices
-* Marchenko & Pastur (1967) — Random Matrix Theory
+* Fama & MacBeth (1973) — Cross-sectional asset pricing
+* Barra Factor Models — Equity risk decomposition
+* Ledoit & Wolf (2004) — Covariance shrinkage
+* Marchenko & Pastur (1967) — Random matrix theory
+* Jolliffe (2002) — Principal Component Analysis
 
 ---
 
 ## 🙋 Author
 
 Godwin Yuen
-github.com/gy623
+GitHub: github.com/gy623
