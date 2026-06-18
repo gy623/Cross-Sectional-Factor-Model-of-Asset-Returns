@@ -133,9 +133,9 @@ $$
 
 ---
 
-### 2.4 Mean-variance optimisation (planned)
+### 2.4 Mean-variance optimisation 
 
-To be implemented using CVXPY:
+Implemented using CVXPY:
 
 * maximise return / risk trade-off
 * incorporate constraints from PCA risk model
